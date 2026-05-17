@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:15
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bookshop_network
+
+  backend:
+    build:
+      context: .
+      args:
+        - ARTIFACT_NAME=${ARTIFACT_NAME:-default.tar.gz}
+    command: sh -c "python manage.py migrate && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - static_volume:/app/static
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - bookshop_network
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - static_volume:/app/static
+    depends_on:
+      - backend
+    networks:
+      - bookshop_network
+
+volumes:
+  postgres_data:
+  static_volume:
+
+networks:
+  bookshop_network:
+    driver: bridge
