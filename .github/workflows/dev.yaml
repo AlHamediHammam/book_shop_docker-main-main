@@ -20,7 +20,7 @@ jobs:
       - name: Create Artifact
         run: |
           mkdir -p book_shop_docker-main-main/artifacts
-          
+
           tar --exclude='./artifacts' --exclude='./.git' --exclude='./.github' -czvf book_shop_docker-main-main/artifacts/app-${{ github.sha }}.tar.gz -C book_shop_docker-main-main .
 
       - name: Pull latest changes
@@ -31,7 +31,7 @@ jobs:
         with:
           commit_message: "chore: add build artifact app-${{ github.sha }}.tar.gz"
           branch: dev
-          file_pattern: 'artifacts/*.tar.gz'
+          file_pattern: 'book_shop_docker-main-main/artifacts/*.tar.gz'
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
