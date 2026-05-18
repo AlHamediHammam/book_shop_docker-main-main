@@ -19,9 +19,9 @@ jobs:
 
       - name: Create Artifact
         run: |
-          mkdir -p artifacts
-          # Package the app. Exclude git, github, and the artifacts folder to prevent recursive archiving.
-          tar --exclude='./artifacts' --exclude='./.git' --exclude='./.github' -czvf artifacts/app-${{ github.sha }}.tar.gz .
+          mkdir -p book_shop_docker-main-main/artifacts
+          
+          tar --exclude='./artifacts' --exclude='./.git' --exclude='./.github' -czvf book_shop_docker-main-main/artifacts/app-${{ github.sha }}.tar.gz -C book_shop_docker-main-main .
 
       - name: Pull latest changes
         run: git pull origin dev --rebase
