@@ -23,6 +23,9 @@ jobs:
           # Package the app. Exclude git, github, and the artifacts folder to prevent recursive archiving.
           tar --exclude='./artifacts' --exclude='./.git' --exclude='./.github' -czvf artifacts/app-${{ github.sha }}.tar.gz .
 
+      - name: Pull latest changes
+        run: git pull origin dev --rebase
+
       - name: Commit Artifact to Repository
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
