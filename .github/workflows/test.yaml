@@ -1,4 +1,3 @@
-# updated3
 name: Branch 2 — test (Image-First, ECR)
 
 on:
@@ -9,6 +8,8 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
@@ -21,10 +22,10 @@ jobs:
 
       - name: Build application artifact
         run: |
-          mkdir -p artifact_out
+          mkdir -p artifacts
           pip install -r requirements.txt --quiet
           python manage.py collectstatic --noinput || true
-          tar -czf artifact_out/app-${{ github.sha }}.tar.gz \
+          tar -czf artifacts/app-${{ github.sha }}.tar.gz \
             --exclude='.git' \
             --exclude='artifacts' \
             .
@@ -44,6 +45,7 @@ jobs:
       - name: Build Docker image from artifact
         run: |
           docker build \
+            --build-arg ARTIFACT_NAME=app-${{ github.sha }}.tar.gz \
             -t 913524900585.dkr.ecr.eu-central-1.amazonaws.com/book_shop:${{ github.sha }} \
             -t 913524900585.dkr.ecr.eu-central-1.amazonaws.com/book_shop:test-latest \
             .
@@ -54,7 +56,7 @@ jobs:
           docker push 913524900585.dkr.ecr.eu-central-1.amazonaws.com/book_shop:test-latest
           echo "IMAGE_URI=913524900585.dkr.ecr.eu-central-1.amazonaws.com/book_shop:${{ github.sha }}" >> $GITHUB_ENV
           
-   - name: Deploy to EC2 via SSH
+      - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -72,7 +74,6 @@ jobs:
             mkdir -p ~/book_shop_test
             cd ~/book_shop_test
             
-           
             cp ~/book_shop_docker-main/book_shop_docker-main-main/docker-compose.yml .
             cp ~/book_shop_docker-main/book_shop_docker-main-main/.env .
             
