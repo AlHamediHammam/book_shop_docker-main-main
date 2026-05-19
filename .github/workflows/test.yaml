@@ -3,13 +3,11 @@ name: Branch 2 — test (Image-First, ECR)
 on:
   push:
     branches:
-      - test
+      - test-branch
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
@@ -22,16 +20,14 @@ jobs:
 
       - name: Build application artifact
         run: |
-          cd book_shop_docker-main-main
-          
-          mkdir -p artifacts
+          mkdir -p artifact_out
           pip install -r requirements.txt --quiet
           python manage.py collectstatic --noinput || true
-          tar -czf artifacts/app-${{ github.sha }}.tar.gz \
+          tar -czf artifact_out/app-${{ github.sha }}.tar.gz \
             --exclude='.git' \
+            --exclude='artifact_out' \
             --exclude='artifacts' \
             .
-          echo "Artifact built: app-${{ github.sha }}.tar.gz"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -57,7 +53,7 @@ jobs:
           docker push 913524900585.dkr.ecr.eu-central-1.amazonaws.com/book_shop:${{ github.sha }}
           docker push 913524900585.dkr.ecr.eu-central-1.amazonaws.com/book_shop:test-latest
           echo "IMAGE_URI=913524900585.dkr.ecr.eu-central-1.amazonaws.com/book_shop:${{ github.sha }}" >> $GITHUB_ENV
-          
+
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -70,17 +66,9 @@ jobs:
             aws ecr get-login-password --region eu-central-1 | \
               docker login --username AWS --password-stdin \
               913524900585.dkr.ecr.eu-central-1.amazonaws.com
-            
             docker pull $IMAGE_URI
-            
             mkdir -p ~/book_shop_test
             cd ~/book_shop_test
-            
-            cp ~/book_shop_docker-main/book_shop_docker-main-main/docker-compose.yml .
-            cp ~/book_shop_docker-main/book_shop_docker-main-main/.env .
-            
+            sed -i "s|image: .*book_shop.*|image: $IMAGE_URI|g" docker-compose.yml
             docker compose -p test down || true
-            
-            sed -i '/backend:/,/networks:/ s|build:.*|image: '"$IMAGE_URI"'|' docker-compose.yml
-            
             docker compose -p test up -d
