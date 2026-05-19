@@ -17,14 +17,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Pull latest changes
+        run: git pull origin dev --rebase
+          
       - name: Create Artifact
         run: |
           mkdir -p book_shop_docker-main-main/artifacts
-
           tar --exclude='./artifacts' --exclude='./.git' --exclude='./.github' -czvf book_shop_docker-main-main/artifacts/app-${{ github.sha }}.tar.gz -C book_shop_docker-main-main .
-
-      - name: Pull latest changes
-        run: git pull origin dev --rebase
 
       - name: Commit Artifact to Repository
         uses: stefanzweifel/git-auto-commit-action@v5
@@ -41,10 +40,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/${{ secrets.EC2_USER }}/book_shop_docker-main/book_shop_docker-main-main
-            
             git fetch origin dev
             git reset --hard origin/dev
-            
             export ARTIFACT_NAME=app-${{ github.sha }}.tar.gz
-            
             docker compose -p dev -f docker-compose.yml up --build -d
