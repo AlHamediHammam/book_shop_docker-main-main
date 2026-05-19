@@ -22,6 +22,8 @@ jobs:
 
       - name: Build application artifact
         run: |
+          cd book_shop_docker-main-main
+          
           mkdir -p artifacts
           pip install -r requirements.txt --quiet
           python manage.py collectstatic --noinput || true
